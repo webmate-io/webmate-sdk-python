@@ -1,4 +1,6 @@
 """Python port of the webmate Java SDK."""
+__version__ = "0.1.0"
+
 from .auth import AuthInfo
 from .environment import WebmateEnvironment
 from .session import WebmateSession
@@ -26,6 +28,7 @@ from .ids import (
 )
 
 __all__ = [
+    "__version__",
     "AuthInfo",
     "WebmateEnvironment",
     "WebmateSession",

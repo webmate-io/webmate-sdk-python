@@ -1,7 +1,7 @@
-# webmate Python SDK (preview)
+# webmate Python SDK
 
-This directory contains an experimental Python port of the webmate Java SDK.
-The package mirrors the Java structure: a `WebmateSession` aggregates service
+This directory contains a webmate Python SDK. 
+`WebmateSession` aggregates service
 clients for browser sessions, the job engine, device control, test management,
 mail testing, artifacts, images, Selenium services, blob storage, and package
 management.
@@ -36,6 +36,26 @@ run_id = session.job_engine.start_job(
 Most client methods accept either the strongly typed identifier wrappers from
 `webmate_sdk.ids` or plain strings/UUIDs.
 
-> **Note:** The port emphasises idiomatic Python while staying close to the Java
-> structure. Certain responses are returned as plain dictionaries instead of
+> **Note:** Certain responses are returned as plain dictionaries instead of
 > bespoke value objects. Extend or adapt the models to match your use cases.
+
+## Requirements
+
+- Python 3.9+
+- `requests>=2.31` (installed automatically with the package)
+
+## Install
+
+Install the SDK in editable mode:
+
+```bash
+pip install webmate-sdk
+```
+
+## SDK tests
+
+Run the SDK unit tests:
+
+```bash
+pytest tests -v
+```

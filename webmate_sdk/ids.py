@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from typing import Any, Type, TypeVar
+from typing import Type, TypeVar, Union
 
 
 T = TypeVar("T", bound="Identifier")
+IdentifierInput = Union[uuid.UUID, str, "Identifier"]
 
 
 @dataclass(frozen=True)
@@ -15,7 +16,7 @@ class Identifier:
 
     value: uuid.UUID
 
-    def __init__(self, value: uuid.UUID | str | "Identifier"):
+    def __init__(self, value: IdentifierInput):
         object.__setattr__(self, "value", _coerce_uuid(value))
 
     def __str__(self) -> str:
@@ -25,11 +26,11 @@ class Identifier:
         return str(self.value)
 
     @classmethod
-    def parse(cls: Type[T], value: uuid.UUID | str | "Identifier") -> T:
+    def parse(cls: Type[T], value: IdentifierInput) -> T:
         return cls(value)
 
 
-def _coerce_uuid(value: uuid.UUID | str | Identifier) -> uuid.UUID:
+def _coerce_uuid(value: IdentifierInput) -> uuid.UUID:
     if isinstance(value, Identifier):
         return value.value
     if isinstance(value, uuid.UUID):

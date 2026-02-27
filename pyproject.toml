@@ -1,16 +1,39 @@
 [project]
 name = "webmate-sdk"
 version = "0.1.0"
-description = "Python SDK analogous to the webmate Java SDK"
+description = "Python SDK for webmate"
 authors = [
-  {name = "webmate"},
+  { name = "webmate" },
 ]
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
+keywords = ["webmate", "sdk", "testing", "selenium", "appium"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+license-files = ["LICEN[CS]E*"]
+
 dependencies = [
   "requests>=2.31",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "build>=1.2",
+  "twine>=5.1",
+]
+
 [build-system]
-requires = ["setuptools>=64", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
