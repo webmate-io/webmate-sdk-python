@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from typing import Mapping, Optional
+from typing import List, Mapping, Optional
 
 from ..blobs.client import BlobClient
 from ..exceptions import WebmateApiError
@@ -16,6 +16,7 @@ class PackageMgmtClient:
     _CREATE_PACKAGE = UriTemplate("/projects/{projectId}/packages", name="CreatePackage")
     _UPDATE_PACKAGE = UriTemplate("/package/packages/{packageId}", name="UpdatePackage")
     _GET_PACKAGE = UriTemplate("/package/packages/{packageId}", name="GetPackage")
+    _GET_PACKAGES_FOR_PROJECT = UriTemplate("/projects/{projectId}/packages/full", name="GetPackagesForProject")
     _DELETE_PACKAGE = UriTemplate("/package/packages/{packageId}", name="DeletePackage")
 
     def __init__(self, session: WebmateSession) -> None:
@@ -47,6 +48,11 @@ class PackageMgmtClient:
 
     def get_package(self, package_id: PackageId | str) -> dict | None:
         response = self._client.get(self._GET_PACKAGE, path_params={"packageId": str(package_id)})
+        return _safe_json(response)
+
+    def get_packages_for_project(self, project_id: ProjectId | None = None) -> List[dict]:
+        project = project_id or self._session.require_project()
+        response = self._client.get(self._GET_PACKAGES_FOR_PROJECT, path_params={"projectId": str(project)})
         return _safe_json(response)
 
     def wait_for_package(self, package_id: PackageId | str, *, timeout_seconds: float = 600.0, poll_interval: float = 3.0) -> dict:
