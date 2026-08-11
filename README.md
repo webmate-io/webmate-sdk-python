@@ -1,4 +1,4 @@
-# webmate Python SDK
+# webmate Python SDK <img src="https://avatars.githubusercontent.com/u/13346605" alt="webmate logo" width="28"/> ![pypi](https://img.shields.io/pypi/v/webmate-sdk)
 
 This directory contains a webmate Python SDK. 
 `WebmateSession` aggregates service
