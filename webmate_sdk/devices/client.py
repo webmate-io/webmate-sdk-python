@@ -44,6 +44,7 @@ class DeviceClient:
         self,
         device_request: Mapping[str, object],
         project_id: Optional[ProjectId] = None,
+        *,
         use_deployed: Optional[bool] = None,
     ) -> Dict[str, Any]:
         project = project_id or self._session.require_project()
