@@ -40,12 +40,20 @@ class DeviceClient:
             return data
         return None
 
-    def request_device(self, device_request: Mapping[str, object], project_id: Optional[ProjectId] = None) -> Dict[str, Any]:
+    def request_device(
+        self,
+        device_request: Mapping[str, object],
+        project_id: Optional[ProjectId] = None,
+        *,
+        use_deployed: Optional[bool] = None,
+    ) -> Dict[str, Any]:
         project = project_id or self._session.require_project()
         payload = to_jsonable(device_request)
+        query = {"useDeployed": None if use_deployed is None else str(use_deployed).lower()}
         response = self._client.post(
             self._REQUEST_DEVICE,
             path_params={"projectId": str(project)},
+            query=query,
             json=payload,
         )
         data = _safe_json(response)
