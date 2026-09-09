@@ -2,7 +2,7 @@
 
 All notable changes to the webmate Python SDK will be documented in this file.
 
-## [Unreleased]
+## [0.1.2] - 2026-09-09
 ### New Features
 - `DeviceClient.request_device` accepts an optional `use_deployed` flag, passed through to the API as a query parameter
 
