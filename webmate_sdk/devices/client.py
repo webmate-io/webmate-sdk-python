@@ -1,9 +1,11 @@
 """Device subsystem facade."""
 from __future__ import annotations
 
+import time
 import uuid
 from typing import Any, Dict, List, Mapping, Optional, Union
 
+from ..exceptions import WebmateApiError, WebmateTimeoutError
 from ..http import ApiClient, UriTemplate
 from ..ids import DeviceId, ImageId, PackageId, ProjectId
 from ..session import WebmateSession
@@ -78,16 +80,87 @@ class DeviceClient:
         device_id: Union[DeviceId, str],
         package_id: Union[PackageId, str],
         *,
-        package_type: str = "apk",
+        package_type: Optional[str] = None,
         instrumented: bool = False,
-    ) -> None:
-        # Keep the public signature stable although `instrumented` has no effect
-        # with the requirement-based installation flow.
-        _ = instrumented
+        wait: bool = False,
+        timeout_seconds: float = 600.0,
+        poll_interval: float = 5.0,
+    ) -> PackageId:
+        """Request the installation of an app on a device.
+
+        ``package_id`` is the id of the package as returned by the package management
+        (e.g. by ``packages.upload_and_create_package``). The concrete package that gets
+        installed is resolved from it: the original package, or the instrumented one if
+        ``instrumented`` is set. ``package_type`` overrides the type reported for it.
+
+        This writes the corresponding device property requirement. By default it does not
+        wait for the installation to complete; with ``wait=True`` it blocks until the device
+        reports the package as installed (see ``wait_for_installed_package``).
+
+        Returns the id of the concrete package that is installed.
+        """
+        package = self._session.packages.get_package(package_id)
+        if not package:
+            raise ValueError(f"Package {package_id} not found")
+        if instrumented:
+            resolved_id = package.get("instrumentedPackageId")
+            if not resolved_id:
+                raise ValueError(f"Package {package_id} has no instrumented version")
+            resolved_type = package.get("instrumentedPackageType") or package.get("origPackageType")
+        else:
+            resolved_id = package.get("origPackageId")
+            resolved_type = package.get("origPackageType")
+        installation_id = str(uuid.uuid4())
         self.impose_property_requirement(
             device_id,
-            _package_installation_requirement(package_id, package_type=package_type),
+            _package_installation_requirement(
+                resolved_id, package_type=package_type or resolved_type or "apk", installation_id=installation_id
+            ),
         )
+        installed_package_id = PackageId.parse(resolved_id)
+        if wait:
+            self.wait_for_installed_package(
+                device_id,
+                installed_package_id,
+                installation_id=installation_id,
+                timeout_seconds=timeout_seconds,
+                poll_interval=poll_interval,
+            )
+        return installed_package_id
+
+    def wait_for_installed_package(
+        self,
+        device_id: Union[DeviceId, str],
+        installed_package_id: Union[PackageId, str],
+        *,
+        installation_id: Optional[str] = None,
+        timeout_seconds: float = 600.0,
+        poll_interval: float = 5.0,
+    ) -> Dict[str, Any]:
+        """Wait until the device reports the given package as installed and return the device.
+
+        ``installed_package_id`` is the concrete package, as returned by ``install_app``.
+        If ``installation_id`` is given, only the installation with that id is considered, so that
+        a previous installation of the same package is not mistaken for the requested one.
+        Raises ``WebmateApiError`` if the device reports the installation as failed and
+        ``WebmateTimeoutError`` if it does not finish within ``timeout_seconds``.
+        """
+        deadline = time.monotonic() + timeout_seconds
+        while True:
+            device = self.get_device(device_id)
+            state = _installation_state(device, str(installed_package_id), installation_id)
+            if state == "finished":
+                return device
+            if state == "failed":
+                raise WebmateApiError(
+                    f"Installation of package {installed_package_id} on device {device_id} failed", payload=device
+                )
+            if time.monotonic() >= deadline:
+                raise WebmateTimeoutError(
+                    f"Package {installed_package_id} was not installed on device {device_id} "
+                    f"within {timeout_seconds} seconds"
+                )
+            time.sleep(poll_interval)
 
     def impose_property_requirement(self, device_id: Union[DeviceId, str], requirement: Mapping[str, object]) -> None:
         self._client.post(
@@ -128,10 +201,27 @@ def _safe_json(response, *, allow_text: bool = False):
         return None
 
 
-def _package_installation_requirement(package_id: Union[PackageId, str], *, package_type: str) -> Dict[str, object]:
+def _installation_state(
+    device: Optional[Mapping[str, Any]], package_id: str, installation_id: Optional[str] = None
+) -> Optional[str]:
+    """State of the latest installation of the package (or of the given installation) reported by the device, if any."""
+    installed = ((device or {}).get("properties") or {}).get("package.installedPackages") or []
+    if isinstance(installed, Mapping):
+        installed = [installed]
+    states = [
+        p.get("state") for p in installed
+        if isinstance(p, Mapping) and p.get("packageId") == package_id
+        and (installation_id is None or p.get("installationId") == installation_id)
+    ]
+    return states[-1] if states else None
+
+
+def _package_installation_requirement(
+    package_id: Union[PackageId, str], *, package_type: str, installation_id: str
+) -> Dict[str, object]:
     return {
         "package.installedPackages": {
-            "installationId": str(uuid.uuid4()),
+            "installationId": installation_id,
             "packageId": str(package_id),
             "packageType": package_type,
             "state": "finished",
