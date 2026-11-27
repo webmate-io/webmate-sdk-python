@@ -8,6 +8,7 @@ All notable changes to the webmate Python SDK will be documented in this file.
 - New method `DeviceClient.wait_for_installed_package` that waits until a device reports a package as installed; it raises `WebmateApiError` if the installation failed and `WebmateTimeoutError` if it does not finish in time. With `installation_id` it only considers that installation (`install_app(wait=True)` uses this, so a previous installation of the same package is not mistaken for the requested one)
 ### Bug Fixes
 - `DeviceClient.install_app` now installs the concrete package behind the given package id (`origPackageId`, or `instrumentedPackageId` if `instrumented=True`) instead of writing the package document id into the requirement, which the device could not install. The package type is taken from the package unless `package_type` is given.
+- Support platform strings without an OS version, such as `LINUX`, in `Platform.from_legacy` and omit absent versions from browser JSON.
 
 ## [0.1.2] - 2026-09-09
 ### New Features
