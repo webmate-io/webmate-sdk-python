@@ -11,6 +11,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from webmate_sdk import AuthInfo, WebmateEnvironment
 from webmate_sdk.browsersession import BrowserSessionClient
+from webmate_sdk.browsersession.models import Browser, Platform
 from webmate_sdk.ids import BrowserSessionId
 from webmate_sdk.session import WebmateSession
 
@@ -26,6 +27,20 @@ def make_response(status=200, json_data=None, text=""):
     response.encoding = "utf-8"
     response.url = "https://example.com/api"
     return response
+
+
+class BrowserPlatformTest(unittest.TestCase):
+    def test_legacy_platforms_in_browser_json(self):
+        cases = {
+            "LINUX": {"platformType": "LINUX"},
+            "WINDOWS_10": {"platformType": "WINDOWS", "platformVersion": "10"},
+            "WINDOWS_10_64": {"platformType": "WINDOWS", "platformVersion": "10", "platformArchitecture": "64"},
+        }
+        for value, expected_platform in cases.items():
+            with self.subTest(value=value):
+                platform = Platform.from_legacy(value)
+                self.assertEqual(platform.platform_version, expected_platform.get("platformVersion"))
+                self.assertEqual(Browser("CHROME", "124", platform).to_json()["platform"], expected_platform)
 
 
 class BrowserSessionClientTest(unittest.TestCase):

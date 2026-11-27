@@ -18,23 +18,24 @@ from ..utils import to_jsonable
 @dataclass
 class Platform:
     platform_type: str
-    platform_version: str
+    platform_version: Optional[str] = None
     platform_architecture: Optional[str] = None
 
     @classmethod
     def from_legacy(cls, value: str) -> "Platform":
         parts = value.split("_")
+        if len(parts) == 1 and parts[0]:
+            return cls(parts[0])
         if len(parts) == 2:
             return cls(parts[0], parts[1])
         if len(parts) == 3:
             return cls(parts[0], parts[1], parts[2])
         raise ValueError(f"Invalid platform string: {value}")
 
-    def to_json(self) -> Mapping[str, Optional[str]]:
-        payload: dict[str, Optional[str]] = {
-            "platformType": self.platform_type,
-            "platformVersion": self.platform_version,
-        }
+    def to_json(self) -> Mapping[str, str]:
+        payload = {"platformType": self.platform_type}
+        if self.platform_version is not None:
+            payload["platformVersion"] = self.platform_version
         if self.platform_architecture:
             payload["platformArchitecture"] = self.platform_architecture
         return payload
